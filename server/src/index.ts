@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import "./loadEnv.js";
 import express from "express";
 import "express-async-errors";
 import cors from "cors";
@@ -18,8 +18,6 @@ import { friendUserIds } from "./social.js";
 import { renderInviteOgHtml, shouldServeInviteOg } from "./inviteOg.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 if (!process.env.DATABASE_URL?.trim()) {
   console.error("[dusk] Missing DATABASE_URL — add it in Replit Secrets.");

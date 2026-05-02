@@ -1,15 +1,38 @@
 import nodemailer from "nodemailer";
 
-const RESEND_API_KEY = (process.env.RESEND_API_KEY ?? "").trim();
-const SMTP_HOST = (process.env.SMTP_HOST ?? "").trim();
-const SMTP_PORT = Number(process.env.SMTP_PORT) || 587;
-const SMTP_USER = (process.env.SMTP_USER ?? "").trim();
-const SMTP_PASS = (process.env.SMTP_PASS ?? "").trim();
-const SMTP_SECURE = process.env.SMTP_SECURE === "true" || SMTP_PORT === 465;
-const APP_NAME = process.env.MAIL_APP_NAME ?? "Dusk";
+/** Read at use-time so `.env` / Replit Secrets are visible (not frozen at module load before `loadEnv`). */
+function resendApiKey(): string {
+  return (process.env.RESEND_API_KEY ?? process.env.RESEND_KEY ?? "").trim();
+}
+
+function smtpHost(): string {
+  return (process.env.SMTP_HOST ?? "").trim();
+}
+
+function smtpPort(): number {
+  return Number(process.env.SMTP_PORT) || 587;
+}
+
+function smtpUser(): string {
+  return (process.env.SMTP_USER ?? "").trim();
+}
+
+function smtpPass(): string {
+  return (process.env.SMTP_PASS ?? "").trim();
+}
+
+function smtpSecure(): boolean {
+  return process.env.SMTP_SECURE === "true" || smtpPort() === 465;
+}
+
+function appName(): string {
+  return process.env.MAIL_APP_NAME ?? "Dusk";
+}
 
 /** Resend’s shared test inbox — works without a domain; set MAIL_FROM for your own noreply domain. */
-const RESEND_DEFAULT_FROM = `${APP_NAME} <onboarding@resend.dev>`;
+function resendDefaultFrom(): string {
+  return `${appName()} <onboarding@resend.dev>`;
+}
 
 let transporter: nodemailer.Transporter | null | undefined;
 
@@ -21,25 +44,26 @@ function rawFromEnv(): string {
 export function resolveMailFrom(): string {
   const raw = rawFromEnv();
   if (!raw) {
-    if (RESEND_API_KEY) return RESEND_DEFAULT_FROM;
-    return `${APP_NAME} <noreply@localhost>`;
+    if (resendApiKey()) return resendDefaultFrom();
+    return `${appName()} <noreply@localhost>`;
   }
   if (raw.includes("<") && raw.includes(">")) return raw;
-  if (raw.includes("@")) return `${APP_NAME} <${raw}>`;
+  if (raw.includes("@")) return `${appName()} <${raw}>`;
   return raw;
 }
 
 function getTransporter(): nodemailer.Transporter | null {
   if (transporter !== undefined) return transporter;
-  if (!SMTP_HOST) {
+  const host = smtpHost();
+  if (!host) {
     transporter = null;
     return null;
   }
   transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_SECURE,
-    auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
+    host,
+    port: smtpPort(),
+    secure: smtpSecure(),
+    auth: smtpUser() ? { user: smtpUser(), pass: smtpPass() } : undefined,
   });
   return transporter;
 }
@@ -52,7 +76,8 @@ export type SendMailInput = {
 };
 
 async function sendViaResend(input: SendMailInput): Promise<boolean> {
-  if (!RESEND_API_KEY) return false;
+  const key = resendApiKey();
+  if (!key) return false;
   const from = resolveMailFrom();
   const replyTo = (process.env.MAIL_REPLY_TO ?? "").trim() || undefined;
   const body: Record<string, unknown> = {
@@ -66,20 +91,20 @@ async function sendViaResend(input: SendMailInput): Promise<boolean> {
   const resp = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
+      Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
   });
   if (!resp.ok) {
     const errBody = await resp.text().catch(() => "");
-    throw new Error(`[${APP_NAME} mail] Resend error ${resp.status}: ${errBody}`);
+    throw new Error(`[${appName()} mail] Resend error ${resp.status}: ${errBody}`);
   }
   return true;
 }
 
 export async function sendMail(input: SendMailInput): Promise<{ ok: boolean; previewUrl?: string }> {
-  if (RESEND_API_KEY) {
+  if (resendApiKey()) {
     await sendViaResend(input);
     return { ok: true };
   }
@@ -87,8 +112,8 @@ export async function sendMail(input: SendMailInput): Promise<{ ok: boolean; pre
   const tx = getTransporter();
   if (!tx) {
     console.info(
-      `[${APP_NAME} mail] No Resend or SMTP config — logging email instead of sending.\n` +
-        `Set RESEND_API_KEY + MAIL_FROM (or SMTP_*) for production.\n` +
+      `[${appName()} mail] No Resend or SMTP config — logging email instead of sending.\n` +
+        `Replit: create a Secret named exactly RESEND_API_KEY (or set SMTP_*).\n` +
         `To: ${input.to}\nSubject: ${input.subject}\n---\n${input.text}\n---`,
     );
     return { ok: true };
@@ -105,6 +130,6 @@ export async function sendMail(input: SendMailInput): Promise<{ ok: boolean; pre
   });
   const rawPreview = nodemailer.getTestMessageUrl(info);
   const previewUrl = typeof rawPreview === "string" ? rawPreview : undefined;
-  if (previewUrl) console.info(`[${APP_NAME} mail] preview: ${previewUrl}`);
+  if (previewUrl) console.info(`[${appName()} mail] preview: ${previewUrl}`);
   return { ok: true, previewUrl };
 }
