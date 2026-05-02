@@ -1,8 +1,13 @@
-# Workspace "Run" + Deploy: https://docs.replit.com/core-concepts/workspace/app-setup/configuration
+# Replit: https://docs.replit.com/core-concepts/workspace/app-setup/configuration
 modules = ["nodejs-20"]
 
 build = "npm install && npm run build"
-run = "npm run start -w server"
+
+[run]
+args = ["sh", "-c", "npm run start -w server"]
+
+[run.env]
+PORT = "3000"
 
 [nix]
 channel = "stable-23_11"
@@ -11,3 +16,7 @@ channel = "stable-23_11"
 build = ["sh", "-c", "npm install && npm run build"]
 run = ["sh", "-c", "npm run start -w server"]
 deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 3000
+externalPort = 80

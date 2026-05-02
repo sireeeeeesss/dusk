@@ -1,4 +1,4 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import express from "express";
 import "express-async-errors";
 import cors from "cors";
@@ -18,6 +18,14 @@ import { friendUserIds } from "./social.js";
 import { renderInviteOgHtml, shouldServeInviteOg } from "./inviteOg.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
+if (!process.env.DATABASE_URL?.trim()) {
+  console.error("[dusk] Missing DATABASE_URL — add it in Replit Secrets.");
+  process.exit(1);
+}
+
 const clientDist = path.resolve(__dirname, "../../client/dist");
 
 const app = express();
@@ -28,6 +36,9 @@ const io = new IOServer(httpServer, {
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "2mb" }));
+app.get("/health", (_req, res) => {
+  res.status(200).type("text/plain").send("ok");
+});
 registerRoutes(app, io);
 
 /** Rich link previews (Discord, Slack, iMessage, etc.) — bots get OG HTML; humans fall through to the SPA. */
