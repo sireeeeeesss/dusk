@@ -473,10 +473,11 @@ const PORT = Number(process.env.PORT) || (onReplit ? 3000 : 3333);
 try {
   await prisma.$connect();
 } catch (e) {
-  console.error(
-    "[dusk] database unreachable — set DATABASE_URL, run `docker compose up -d` (repo root), then `npm run db:push`",
-    e instanceof Error ? e.message : e,
-  );
+  const hint =
+    onReplit && String(process.env.DATABASE_URL ?? "").includes("localhost")
+      ? "Replit: use your hosted Postgres URL in Secrets (not localhost). See earlier [dusk] DATABASE_URL message if shown."
+      : "set DATABASE_URL, run `docker compose up -d` (repo root), then `npm run db:push`";
+  console.error(`[dusk] database unreachable — ${hint}`, e instanceof Error ? e.message : e);
   process.exit(1);
 }
 
