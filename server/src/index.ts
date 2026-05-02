@@ -482,4 +482,14 @@ try {
 
 httpServer.listen(PORT, "0.0.0.0", () => {
   console.log(`dusk api + ws on http://0.0.0.0:${PORT}`);
+  const rk = process.env.RESEND_API_KEY?.trim();
+  const resendNames = Object.keys(process.env).filter((k) => k.toLowerCase().includes("resend"));
+  console.info(
+    `[dusk] RESEND_API_KEY loaded: ${Boolean(rk)} (length ${rk?.length ?? 0}); env keys matching "resend": ${resendNames.join(", ") || "(none)"}`,
+  );
+  if (onReplit && !rk) {
+    console.info(
+      `[dusk] If the secret exists in the editor, run in Shell: printenv RESEND_API_KEY | wc -c (should be >0). Also try Stop → Run after saving secrets, or shell: kill 1 (reboot VM).`,
+    );
+  }
 });
