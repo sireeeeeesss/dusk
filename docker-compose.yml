@@ -1,0 +1,18 @@
+# Local Postgres — data survives container restarts (volume dusk_pgdata).
+# Usage: docker compose up -d
+# Then set server/.env DATABASE_URL=postgresql://dusk:dusk@localhost:5432/dusk
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: dusk
+      POSTGRES_PASSWORD: dusk
+      POSTGRES_DB: dusk
+    volumes:
+      - dusk_pgdata:/var/lib/postgresql/data
+
+volumes:
+  dusk_pgdata:

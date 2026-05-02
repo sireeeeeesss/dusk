@@ -1,0 +1,16 @@
+{
+  "name": "dusk",
+  "private": true,
+  "workspaces": ["client", "server"],
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:push": "npm run db:push -w server",
+    "db:seed": "npm run db:seed -w server",
+    "build": "npm run build -w server && npm run build -w client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
