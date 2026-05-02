@@ -456,6 +456,6 @@ try {
   process.exit(1);
 }
 
-httpServer.listen(PORT, () => {
-  console.log(`dusk api + ws on http://localhost:${PORT}`);
+httpServer.listen(PORT, "0.0.0.0", () => {
+  console.log(`dusk api + ws on http://0.0.0.0:${PORT}`);
 });
