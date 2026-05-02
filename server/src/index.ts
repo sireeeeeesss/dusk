@@ -455,7 +455,9 @@ io.on("connection", (socket) => {
   );
 });
 
-const PORT = Number(process.env.PORT) || 3333;
+/** Replit sets `PORT`; local default was 3333 to avoid clashing with random `3000` apps. */
+const onReplit = Boolean(process.env.REPL_ID ?? process.env.REPLIT_DEPLOYMENT);
+const PORT = Number(process.env.PORT) || (onReplit ? 3000 : 3333);
 
 try {
   await prisma.$connect();
