@@ -26,6 +26,7 @@ if (!process.env.DATABASE_URL?.trim()) {
   process.exit(1);
 }
 
+const onReplit = Boolean(process.env.REPL_ID ?? process.env.REPLIT_DEPLOYMENT);
 const clientDist = path.resolve(__dirname, "../../client/dist");
 
 const app = express();
@@ -66,6 +67,19 @@ if (existsSync(clientDist)) {
       return;
     }
     res.sendFile(path.join(clientDist, "index.html"));
+  });
+} else if (onReplit) {
+  app.get("/", (_req, res) => {
+    res
+      .status(503)
+      .type("html")
+      .send(
+        `<!doctype html><meta charset=utf-8><title>Dusk</title><pre style="font:14px system-ui;padding:1.5rem">` +
+          `No built UI yet (missing client/dist).\n\n` +
+          `In the shell, from the repo root (~/workspace), run:\n\n` +
+          `  npm run build\n\n` +
+          `Then restart Run. Preview must use the same port as the server (see console: dusk api + ws on …).</pre>`,
+      );
   });
 } else {
   app.get("/", (_req, res) => {
@@ -456,7 +470,6 @@ io.on("connection", (socket) => {
 });
 
 /** Replit sets `PORT`; local default was 3333 to avoid clashing with random `3000` apps. */
-const onReplit = Boolean(process.env.REPL_ID ?? process.env.REPLIT_DEPLOYMENT);
 const PORT = Number(process.env.PORT) || (onReplit ? 3000 : 3333);
 
 try {
