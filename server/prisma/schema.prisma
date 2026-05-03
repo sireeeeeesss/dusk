@@ -27,6 +27,9 @@ model User {
   customStatus     String   @default("")
   avatarImageMime  String?
   bannerImageMime  String?
+  /** Full https URL when using Cloudinary (or other CDN) for profile image */
+  avatarRemoteUrl  String?
+  bannerRemoteUrl  String?
   createdAt        DateTime @default(now())
   /** "everyone" | "friends_only" | "no_one" — DM policy for non-friend flows */
   dmPrivacy        String   @default("everyone")

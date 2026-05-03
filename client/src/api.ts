@@ -349,6 +349,11 @@ export async function fetchVoiceBlob(url: string): Promise<string> {
   return fetchAuthedMediaBlob(url);
 }
 
+/** Profile images may be absolute Cloudinary URLs (no auth fetch). */
+export function isAbsoluteImageUrl(url: string): boolean {
+  return url.startsWith("https://") || url.startsWith("http://");
+}
+
 export async function fetchImageBlob(url: string): Promise<string> {
   const res = await fetch(`${base}${url}`, { headers: authHeader() });
   if (!res.ok) throw new Error("image load failed");

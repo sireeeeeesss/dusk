@@ -22,6 +22,7 @@ import {
   canonicalVideoMime,
   videoStorageExt,
 } from "./uploads.js";
+import { destroyProfileImageCloudinary, uploadProfileImageCloudinary, useCloudinaryProfile } from "./cloudinaryProfile.js";
 import { ensureUploadDirs, mediaKey, readMedia, writeMedia } from "./mediaStore.js";
 import {
   serializeChannelMessage,
@@ -341,22 +342,32 @@ export function registerRoutes(app: Express, io: IOServer): void {
       return;
     }
     const mime = req.file.mimetype || "image/png";
-    const ext = extFromMime(mime);
     await deleteUserAvatarVariants(req.user!.id);
-    await writeMedia(mediaKey.userAvatar(req.user!.id, ext), req.file.buffer, mime);
-    const updated = await prisma.user.update({
-      where: { id: req.user!.id },
-      data: { avatarImageMime: mime },
-    });
+    let updated;
+    if (useCloudinaryProfile()) {
+      const url = await uploadProfileImageCloudinary("avatar", req.user!.id, req.file.buffer, mime);
+      updated = await prisma.user.update({
+        where: { id: req.user!.id },
+        data: { avatarRemoteUrl: url, avatarImageMime: null },
+      });
+    } else {
+      const ext = extFromMime(mime);
+      await writeMedia(mediaKey.userAvatar(req.user!.id, ext), req.file.buffer, mime);
+      updated = await prisma.user.update({
+        where: { id: req.user!.id },
+        data: { avatarImageMime: mime, avatarRemoteUrl: null },
+      });
+    }
     const token = signToken(updated.id, updated.username);
     res.json({ token, user: toSessionUser(updated) });
   });
 
   app.delete("/api/me/avatar", authMiddleware, async (req: AuthedRequest, res) => {
     await deleteUserAvatarVariants(req.user!.id);
+    await destroyProfileImageCloudinary("avatar", req.user!.id);
     const updated = await prisma.user.update({
       where: { id: req.user!.id },
-      data: { avatarImageMime: null },
+      data: { avatarImageMime: null, avatarRemoteUrl: null },
     });
     const token = signToken(updated.id, updated.username);
     res.json({ token, user: toSessionUser(updated) });
@@ -368,22 +379,32 @@ export function registerRoutes(app: Express, io: IOServer): void {
       return;
     }
     const mime = req.file.mimetype || "image/png";
-    const ext = extFromMime(mime);
     await deleteUserBannerVariants(req.user!.id);
-    await writeMedia(mediaKey.userBanner(req.user!.id, ext), req.file.buffer, mime);
-    const updated = await prisma.user.update({
-      where: { id: req.user!.id },
-      data: { bannerImageMime: mime },
-    });
+    let updated;
+    if (useCloudinaryProfile()) {
+      const url = await uploadProfileImageCloudinary("banner", req.user!.id, req.file.buffer, mime);
+      updated = await prisma.user.update({
+        where: { id: req.user!.id },
+        data: { bannerRemoteUrl: url, bannerImageMime: null },
+      });
+    } else {
+      const ext = extFromMime(mime);
+      await writeMedia(mediaKey.userBanner(req.user!.id, ext), req.file.buffer, mime);
+      updated = await prisma.user.update({
+        where: { id: req.user!.id },
+        data: { bannerImageMime: mime, bannerRemoteUrl: null },
+      });
+    }
     const token = signToken(updated.id, updated.username);
     res.json({ token, user: toSessionUser(updated) });
   });
 
   app.delete("/api/me/banner", authMiddleware, async (req: AuthedRequest, res) => {
     await deleteUserBannerVariants(req.user!.id);
+    await destroyProfileImageCloudinary("banner", req.user!.id);
     const updated = await prisma.user.update({
       where: { id: req.user!.id },
-      data: { bannerImageMime: null },
+      data: { bannerImageMime: null, bannerRemoteUrl: null },
     });
     const token = signToken(updated.id, updated.username);
     res.json({ token, user: toSessionUser(updated) });

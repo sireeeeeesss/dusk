@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchImageBlob } from "../api";
+import { fetchImageBlob, isAbsoluteImageUrl } from "../api";
 import type { User } from "../types";
 
 export function ProfileBanner({ user, className = "" }: { user: Pick<User, "bannerUrl">; className?: string }): React.ReactElement {
@@ -9,6 +9,10 @@ export function ProfileBanner({ user, className = "" }: { user: Pick<User, "bann
     if (!user.bannerUrl) {
       setSrc(null);
       return;
+    }
+    if (isAbsoluteImageUrl(user.bannerUrl)) {
+      setSrc(user.bannerUrl);
+      return () => {};
     }
     let cancelled = false;
     let blobUrl: string | null = null;

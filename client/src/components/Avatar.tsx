@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchImageBlob } from "../api";
+import { fetchImageBlob, isAbsoluteImageUrl } from "../api";
 import type { Presence, User } from "../types";
 
 export function Avatar({
@@ -22,6 +22,10 @@ export function Avatar({
     if (!user.avatarUrl) {
       setImg(null);
       return;
+    }
+    if (isAbsoluteImageUrl(user.avatarUrl)) {
+      setImg(user.avatarUrl);
+      return () => {};
     }
     let cancelled = false;
     let blobUrl: string | null = null;

@@ -31,8 +31,8 @@ export function toPublicUser(u: User): PublicUser {
     accentHue: u.accentHue,
     bio: u.bio,
     customStatus: u.customStatus,
-    avatarUrl: u.avatarImageMime ? `/api/media/user/${u.id}/avatar` : null,
-    bannerUrl: u.bannerImageMime ? `/api/media/user/${u.id}/banner` : null,
+    avatarUrl: u.avatarRemoteUrl ?? (u.avatarImageMime ? `/api/media/user/${u.id}/avatar` : null),
+    bannerUrl: u.bannerRemoteUrl ?? (u.bannerImageMime ? `/api/media/user/${u.id}/banner` : null),
     emailVerified: u.emailVerified,
   };
 }
@@ -60,8 +60,8 @@ export function toLiteUser(u: User): LiteUser {
     displayName: u.displayName,
     avatarHue: u.avatarHue,
     accentHue: u.accentHue,
-    avatarUrl: u.avatarImageMime ? `/api/media/user/${u.id}/avatar` : null,
-    bannerUrl: u.bannerImageMime ? `/api/media/user/${u.id}/banner` : null,
+    avatarUrl: u.avatarRemoteUrl ?? (u.avatarImageMime ? `/api/media/user/${u.id}/avatar` : null),
+    bannerUrl: u.bannerRemoteUrl ?? (u.bannerImageMime ? `/api/media/user/${u.id}/banner` : null),
   };
 }
 
