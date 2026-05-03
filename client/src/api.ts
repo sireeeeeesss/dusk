@@ -38,23 +38,11 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export type RegisterResponse = { needsVerification: true; email: string };
-
 export const api = {
   register: (body: { email: string; username: string; password: string; displayName?: string }) =>
-    req<RegisterResponse>("/api/auth/register", {
+    req<{ token: string; user: import("./types").User }>("/api/auth/register", {
       method: "POST",
       body: JSON.stringify(body),
-    }),
-  requestEmailVerification: (email: string) =>
-    req<{ ok: boolean }>("/api/auth/verify-email/request", {
-      method: "POST",
-      body: JSON.stringify({ email }),
-    }),
-  confirmEmailVerification: (email: string, code: string) =>
-    req<{ token: string; user: import("./types").User }>("/api/auth/verify-email/confirm", {
-      method: "POST",
-      body: JSON.stringify({ email, code }),
     }),
   requestPasswordReset: (email: string) =>
     req<{ ok: boolean }>("/api/auth/forgot-password", {

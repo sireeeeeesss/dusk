@@ -20,14 +20,7 @@ export function LoginPage(): React.ReactElement {
       await login(email, password);
       nav(postAuth);
     } catch (e2) {
-      const msg = e2 instanceof Error ? e2.message : "nope";
-      if (msg === "email_not_verified") {
-        const r =
-          postAuth !== "/app" ? `&redirect=${encodeURIComponent(postAuth)}` : "";
-        nav(`/verify-email?email=${encodeURIComponent(email.trim())}${r}`);
-        return;
-      }
-      setErr(msg);
+      setErr(e2 instanceof Error ? e2.message : "nope");
     }
   }
 

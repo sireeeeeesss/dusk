@@ -1,5 +1,5 @@
 const APP = process.env.MAIL_APP_NAME ?? "Dusk";
-/** Links in emails (verify / open app). Use public web app URL in production. */
+/** Links in emails (open app). Use public web app URL in production. */
 const BASE_URL = (process.env.PUBLIC_APP_URL ?? process.env.CLIENT_URL ?? "http://127.0.0.1:5173").replace(
   /\/$/,
   "",
@@ -56,17 +56,6 @@ function layout(inner: string): string {
 
 function codeBlock(code: string): string {
   return `<div style="margin:20px 0;padding:18px 22px;border-radius:14px;background:rgba(255,255,255,0.04);border:1px solid ${brand.border};text-align:center;font-size:32px;letter-spacing:0.35em;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:${brand.glow};">${code}</div>`;
-}
-
-export function verifyEmailContent(code: string): { subject: string; text: string; html: string } {
-  const subject = `${APP} — verify your email`;
-  const text = `Your ${APP} verification code is: ${code}\n\nIt expires in 15 minutes.\n\n${BASE_URL}\n`;
-  const html = layout(
-    `<p style="margin:0 0 8px 0;">Use this code to verify your email and finish signing in:</p>
-     ${codeBlock(code)}
-     <p style="margin:0;color:${brand.muted};font-size:13px;">Paste it in the app — we’ll keep the lights on.</p>`,
-  );
-  return { subject, text, html };
 }
 
 export function resetPasswordContent(code: string): { subject: string; text: string; html: string } {

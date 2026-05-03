@@ -19,15 +19,13 @@ export function RegisterPage(): React.ReactElement {
     e.preventDefault();
     setErr(null);
     try {
-      const r = await register({
+      await register({
         email,
         username,
         password,
         displayName: displayName || undefined,
       });
-      const red =
-        postAuth !== "/app" ? `&redirect=${encodeURIComponent(postAuth)}` : "";
-      nav(`/verify-email?email=${encodeURIComponent(r.email)}${red}`);
+      nav(postAuth);
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : "nope");
     }
@@ -36,7 +34,7 @@ export function RegisterPage(): React.ReactElement {
   return (
     <AuthShell
       title="Create Your Account"
-      subtitle="Set up your profile and verify your email to get started."
+      subtitle="Set up your profile and jump in."
       footer={
         <span>
           Already have an account?{" "}

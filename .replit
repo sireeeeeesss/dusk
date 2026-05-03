@@ -6,8 +6,9 @@ build = "npm install && npm run build"
 [run]
 args = ["sh", "-c", "npm run start -w server"]
 
+# 3333 avoids EADDRINUSE when something else (deployment, zombie node) already has 3000 on the Repl VM.
 [run.env]
-PORT = "3000"
+PORT = "3333"
 
 [nix]
 channel = "stable-23_11"
@@ -18,5 +19,5 @@ run = ["sh", "-c", "npm run start -w server"]
 deploymentTarget = "cloudrun"
 
 [[ports]]
-localPort = 3000
+localPort = 3333
 externalPort = 80

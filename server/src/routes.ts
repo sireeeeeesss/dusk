@@ -5,7 +5,7 @@ import type { AuthedRequest } from "./auth.js";
 import { authMiddleware, comparePassword, hashPassword, signToken } from "./auth.js";
 import { generateOtp6, hashOtp, OTP_EXPIRY_MS, RESEND_COOLDOWN_MS, verifyOtp } from "./authCodes.js";
 import { sendMail } from "./mail.js";
-import { resetPasswordContent, verifyEmailContent } from "./emailTemplates.js";
+import { resetPasswordContent } from "./emailTemplates.js";
 import { notifyChannelMessage, notifyDmMessage } from "./notify.js";
 import { registerSocialRoutes } from "./socialRoutes.js";
 import { normalizeInviteCodeParam } from "./inviteShared.js";
@@ -198,97 +198,13 @@ export function registerRoutes(app: Express, io: IOServer): void {
         email: String(email).toLowerCase(),
         username: String(username),
         passwordHash,
-        emailVerified: false,
+        emailVerified: true,
         displayName: displayName ? String(displayName) : String(username),
         avatarHue: hue,
       },
     });
-    const code = generateOtp6();
-    const emailVerificationCodeHash = await hashOtp(code);
-    const emailVerificationCodeExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailVerificationCodeHash,
-        emailVerificationCodeExpiresAt,
-        emailVerificationSentAt: new Date(),
-      },
-    });
-    const mailBody = verifyEmailContent(code);
-    try {
-      await sendMail({ to: user.email, ...mailBody });
-    } catch (e) {
-      console.error("[dusk] verification email failed", e);
-    }
-    res.json({ needsVerification: true, email: user.email });
-  });
-
-  app.post("/api/auth/verify-email/request", async (req, res) => {
-    const { email } = req.body ?? {};
-    if (!email) {
-      res.status(400).json({ error: "email required" });
-      return;
-    }
-    const user = await prisma.user.findUnique({ where: { email: String(email).toLowerCase() } });
-    res.json({ ok: true });
-    if (!user || user.emailVerified) return;
-    if (
-      user.emailVerificationSentAt &&
-      Date.now() - user.emailVerificationSentAt.getTime() < RESEND_COOLDOWN_MS
-    ) {
-      return;
-    }
-    const code = generateOtp6();
-    const emailVerificationCodeHash = await hashOtp(code);
-    const emailVerificationCodeExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailVerificationCodeHash,
-        emailVerificationCodeExpiresAt,
-        emailVerificationSentAt: new Date(),
-      },
-    });
-    const mailBody = verifyEmailContent(code);
-    try {
-      await sendMail({ to: user.email, ...mailBody });
-    } catch (e) {
-      console.error("[dusk] verification resend failed", e);
-    }
-  });
-
-  app.post("/api/auth/verify-email/confirm", async (req, res) => {
-    const { email, code } = req.body ?? {};
-    if (!email || !code) {
-      res.status(400).json({ error: "email and code required" });
-      return;
-    }
-    const user = await prisma.user.findUnique({ where: { email: String(email).toLowerCase() } });
-    if (
-      !user ||
-      user.emailVerified ||
-      !user.emailVerificationCodeHash ||
-      !user.emailVerificationCodeExpiresAt ||
-      user.emailVerificationCodeExpiresAt < new Date()
-    ) {
-      res.status(400).json({ error: "invalid or expired code" });
-      return;
-    }
-    const ok = await verifyOtp(String(code).trim(), user.emailVerificationCodeHash);
-    if (!ok) {
-      res.status(400).json({ error: "invalid or expired code" });
-      return;
-    }
-    const updated = await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailVerified: true,
-        emailVerificationCodeHash: null,
-        emailVerificationCodeExpiresAt: null,
-      },
-    });
-    const token = signToken(updated.id, updated.username);
-    res.json({ token, user: toSessionUser(updated) });
+    const token = signToken(user.id, user.username);
+    res.json({ token, user: toSessionUser(user) });
   });
 
   app.post("/api/auth/forgot-password", async (req, res) => {
@@ -365,10 +281,6 @@ export function registerRoutes(app: Express, io: IOServer): void {
     const user = await prisma.user.findUnique({ where: { email: String(email).toLowerCase() } });
     if (!user || !(await comparePassword(String(password), user.passwordHash))) {
       res.status(401).json({ error: "invalid credentials" });
-      return;
-    }
-    if (!user.emailVerified) {
-      res.status(403).json({ error: "email_not_verified" });
       return;
     }
     const token = signToken(user.id, user.username);

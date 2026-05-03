@@ -2,13 +2,11 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { api, getToken, setToken } from "../api";
 import type { User } from "../types";
 
-export type RegisterResult = { needsVerification: true; email: string };
-
 type AuthState = {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (p: { email: string; username: string; password: string; displayName?: string }) => Promise<RegisterResult>;
+  register: (p: { email: string; username: string; password: string; displayName?: string }) => Promise<void>;
   logout: () => void;
   applyAuthResponse: (token: string, user: User) => void;
   setUserLocal: (u: User) => void;
@@ -39,15 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }): React.React
     setUser(r.user);
   }, []);
 
-  const register = useCallback(
-    async (p: { email: string; username: string; password: string; displayName?: string }) => {
-      const r = await api.register(p);
-      setToken(null);
-      setUser(null);
-      return { needsVerification: true as const, email: r.email };
-    },
-    [],
-  );
+  const register = useCallback(async (p: { email: string; username: string; password: string; displayName?: string }) => {
+    const r = await api.register(p);
+    setToken(r.token);
+    setUser(r.user);
+  }, []);
 
   const logout = useCallback(() => {
     setToken(null);

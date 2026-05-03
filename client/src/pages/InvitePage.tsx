@@ -80,7 +80,7 @@ export function InvitePage(): React.ReactElement {
   const registerHref = `/register?redirect=${encodeURIComponent(invitePath)}`;
 
   async function join(): Promise<void> {
-    if (!user?.emailVerified || !normalized) return;
+    if (!user || !normalized) return;
     setJoinErr(null);
     setJoining(true);
     try {
@@ -142,7 +142,7 @@ export function InvitePage(): React.ReactElement {
             </div>
           </div>
 
-          {user && user.emailVerified ? (
+          {user ? (
             <div className="space-y-3">
               {joinErr ? <p className="text-center text-sm text-dusk-accent">{joinErr}</p> : null}
               <button
@@ -155,16 +155,6 @@ export function InvitePage(): React.ReactElement {
               </button>
               <Link to="/app" className="block text-center text-xs text-dusk-muted transition hover:text-dusk-text">
                 maybe later — take me home
-              </Link>
-            </div>
-          ) : user && !user.emailVerified ? (
-            <div className="space-y-3 rounded-xl border border-dusk-twilight/25 bg-dusk-twilight/[0.06] p-4 text-center text-sm text-dusk-muted">
-              <p>verify your email first, then this same link still works. we&apos;re patient like that.</p>
-              <Link
-                to={`/verify-email?email=${encodeURIComponent(user.email ?? "")}&redirect=${encodeURIComponent(invitePath)}`}
-                className="inline-block font-semibold text-dusk-glow underline decoration-dusk-glow/40 underline-offset-4"
-              >
-                go verify →
               </Link>
             </div>
           ) : (
