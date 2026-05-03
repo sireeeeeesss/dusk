@@ -10,6 +10,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
+/** Cloudinary's SDK throws on import if CLOUDINARY_URL is set but not `cloudinary://...` (e.g. user pasted an https URL). */
+const cloudinaryUrl = (process.env.CLOUDINARY_URL ?? "").trim();
+if (cloudinaryUrl && !cloudinaryUrl.startsWith("cloudinary://")) {
+  console.warn(
+    "[dusk] CLOUDINARY_URL must start with cloudinary:// — see Cloudinary Dashboard → API Keys. Removing invalid value (you can use CLOUDINARY_CLOUD_NAME + API_KEY + API_SECRET instead).",
+  );
+  delete process.env.CLOUDINARY_URL;
+}
+
 const onReplit = Boolean(process.env.REPL_ID ?? process.env.REPLIT_DEPLOYMENT);
 const dbUrl = (process.env.DATABASE_URL ?? "").trim();
 if (onReplit && dbUrl && /localhost|127\.0\.0\.1/.test(dbUrl)) {
