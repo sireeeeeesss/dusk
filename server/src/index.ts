@@ -16,6 +16,7 @@ import { isTextChannel } from "./channelPolicy.js";
 import { notifyChannelMessage, notifyDmMessage } from "./notify.js";
 import { friendUserIds } from "./social.js";
 import { renderInviteOgHtml, shouldServeInviteOg } from "./inviteOg.js";
+import { useObjectStorage } from "./mediaStore.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -508,6 +509,13 @@ httpServer.listen(PORT, "0.0.0.0", () => {
   if (onReplit && !rk) {
     console.info(
       `[dusk] If the secret exists in the editor, run in Shell: printenv RESEND_API_KEY | wc -c (should be >0). Also try Stop → Run after saving secrets, or shell: kill 1 (reboot VM).`,
+    );
+  }
+  if (process.env.NODE_ENV === "production" && !useObjectStorage()) {
+    console.warn(
+      "[dusk] Media is on local disk only (no S3_BUCKET + S3_ACCESS_KEY_ID + S3_SECRET_ACCESS_KEY). " +
+        "On Render/Fly/etc. the filesystem is ephemeral — avatars, banners, and uploads vanish after restarts. " +
+        "Use Cloudflare R2 or AWS S3; see server/.env.example.",
     );
   }
 });
