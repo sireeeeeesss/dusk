@@ -470,15 +470,32 @@ io.on("connection", (socket) => {
 /** Replit sets `PORT`; local default was 3333 to avoid clashing with random `3000` apps. */
 const PORT = Number(process.env.PORT) || (onReplit ? 3000 : 3333);
 
-try {
-  await prisma.$connect();
-} catch (e) {
-  const hint =
-    onReplit && String(process.env.DATABASE_URL ?? "").includes("localhost")
-      ? "Replit: use your hosted Postgres URL in Secrets (not localhost). See earlier [dusk] DATABASE_URL message if shown."
-      : "set DATABASE_URL, run `docker compose up -d` (repo root), then `npm run db:push`";
-  console.error(`[dusk] database unreachable — ${hint}`, e instanceof Error ? e.message : e);
-  process.exit(1);
+const DB_CONNECT_ATTEMPTS = Number(process.env.DUSK_DB_CONNECT_ATTEMPTS ?? "8");
+const DB_CONNECT_DELAY_MS = Number(process.env.DUSK_DB_CONNECT_DELAY_MS ?? "2500");
+
+let lastConnectErr: unknown;
+for (let attempt = 1; attempt <= DB_CONNECT_ATTEMPTS; attempt++) {
+  try {
+    await prisma.$connect();
+    lastConnectErr = undefined;
+    if (attempt > 1) {
+      console.info(`[dusk] database connected after ${attempt} attempt(s) (cold start / Neon wake)`);
+    }
+    break;
+  } catch (e) {
+    lastConnectErr = e;
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(`[dusk] database connect attempt ${attempt}/${DB_CONNECT_ATTEMPTS} failed: ${msg}`);
+    if (attempt === DB_CONNECT_ATTEMPTS) {
+      const hint =
+        onReplit && String(process.env.DATABASE_URL ?? "").includes("localhost")
+          ? "Replit: use your hosted Postgres URL in Secrets (not localhost). See earlier [dusk] DATABASE_URL message if shown."
+          : "set DATABASE_URL, run `docker compose up -d` (repo root), then `npm run db:push`";
+      console.error(`[dusk] database unreachable — ${hint}`, lastConnectErr);
+      process.exit(1);
+    }
+    await new Promise((r) => setTimeout(r, DB_CONNECT_DELAY_MS));
+  }
 }
 
 httpServer.listen(PORT, "0.0.0.0", () => {
